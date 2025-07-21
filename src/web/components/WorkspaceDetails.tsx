@@ -12,28 +12,7 @@ import { componentModal } from '../helpers/modal'
 import { BuildShipment, NewShipment, Shipment, WorkSpaceType } from '../types/workspace'
 import { kFormatter } from '../helpers/number'
 import PromptForm from './common/PromptForm'
-
-const buildShipmentColumns: ColumnDef<BuildShipment>[] = [
-  { title: 'Build Number', accessorKey: 'buildNumber' },
-  {
-    title: 'Number of Shipments',
-    id: 'numberOfShipments',
-    accessorKey: 'shipments',
-    cell: ({ value }) => (value as Shipment[]).length,
-  },
-  {
-    title: 'Total Cost',
-    id: 'totalCost',
-    accessorKey: 'shipments',
-    cell: ({ value }) => {
-      const totalCost = (value as Shipment[]).reduce(
-        (total: number, shipment: Shipment) => total + shipment.cost,
-        0
-      )
-      return `$${kFormatter(totalCost)}`
-    },
-  },
-]
+import BuildShipmentForm from './workspace/BuildShipmentForm'
 
 /** Detail view of individual workspace */
 export default function WorkspaceDetails({ workspace }: { workspace?: WorkSpaceType }) {
@@ -47,6 +26,96 @@ export default function WorkspaceDetails({ workspace }: { workspace?: WorkSpaceT
     activeWorkspaceTable?.buildShipments.flatMap((bs) =>
       bs.shipments.map((s) => ({ ...s, buildShipmentId: bs.id, buildNumber: bs.buildNumber }))
     ) ?? []
+
+  const buildShipmentColumns: ColumnDef<BuildShipment>[] = [
+    { title: 'Build Number', accessorKey: 'buildNumber' },
+    {
+      title: 'Number of Shipments',
+      id: 'numberOfShipments',
+      accessorKey: 'shipments',
+      cell: ({ value }) => (value as Shipment[]).length,
+    },
+    {
+      title: 'Total Cost',
+      id: 'totalCost',
+      accessorKey: 'shipments',
+      cell: ({ value }) => {
+        const totalCost = (value as Shipment[]).reduce(
+          (total: number, shipment: Shipment) => total + shipment.cost,
+          0
+        )
+        return `$${kFormatter(totalCost)}`
+      },
+    },
+    {
+      title: '',
+      id: 'edit',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-x-3">
+          <button
+            onClick={() => {
+              componentModal({
+                component: (
+                  <PromptForm
+                    label="Are you sure you want to delete this build shipment?"
+                    onNo={() => componentModal(null)}
+                    onYes={async () => {
+                      componentModal(null)
+                      const success = await DosspaceApi.deleteBuildShipment(
+                        activeWorkspaceTable?.id!,
+                        row.id
+                      )
+
+                      if (success) {
+                        if (!activeWorkspaceTable) return
+
+                        const updatedWorkspace = {
+                          ...activeWorkspaceTable,
+                          buildShipments: activeWorkspaceTable.buildShipments.filter(
+                            (bs) => bs.id !== row.id
+                          ),
+                        }
+                        setActiveWorkspaceTable(updatedWorkspace)
+                      }
+                    }}
+                  />
+                ),
+              })
+            }}
+          >
+            <DeleteIcon className="h-4 w-4 cursor-pointer text-red-500" />
+          </button>
+
+          <button
+            onClick={() => {
+              componentModal({
+                component: (
+                  <BuildShipmentForm
+                    data={row}
+                    onSubmit={async (buildNumber) => {
+                      if (!activeWorkspaceTable?.id) return
+                      const res = await DosspaceApi.updateBuildShipment(
+                        activeWorkspaceTable.id,
+                        row.id,
+                        buildNumber
+                      )
+
+                      if (res) {
+                        setActiveWorkspaceTable(res)
+                      }
+                      componentModal(null)
+                    }}
+                  />
+                ),
+              })
+            }}
+          >
+            <Edit className="h-4 w-4" />
+          </button>
+        </div>
+      ),
+    },
+  ]
 
   const shipmentColumns: ColumnDef<Shipment & { buildShipmentId: string; buildNumber: string }>[] =
     [

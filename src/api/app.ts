@@ -9,6 +9,8 @@ import {
   getWorkspaces,
   updateShipment,
   updateWorkspace,
+  updateBuildNumber,
+  deleteBuildShipment,
 } from './util'
 import { reset } from './db/db'
 import { Workspace } from './types'
@@ -77,6 +79,21 @@ app.put('/:workspaceId/shipments/:shipmentId', (req, res) => {
   const { workspaceId, shipmentId } = req.params
   const shipment = req.body
   res.json({ workspace: updateShipment(dbString, workspaceId, shipment) })
+})
+
+/** Updates a buildNumber in the database and returns the updated workspace */
+app.put('/:workspaceId/build-shipments/:buildShipmentId', (req, res) => {
+  const { workspaceId, buildShipmentId } = req.params
+  const { buildNumber } = req.body
+  res.json({
+    workspace: updateBuildNumber(dbString, workspaceId, buildShipmentId, buildNumber),
+  })
+})
+
+/** Deletes a build shipment in the given workspace */
+app.delete('/:workspaceId/build-shipments/:buildShipmentId', (req, res) => {
+  const { workspaceId, buildShipmentId } = req.params
+  res.json({ success: deleteBuildShipment(dbString, workspaceId, buildShipmentId) })
 })
 
 module.exports = app

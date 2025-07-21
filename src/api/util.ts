@@ -116,3 +116,42 @@ export function deleteShipment(dbString: string, workspaceId: string, shipmentId
   update(dbString, 'workspaces', workspace.id, workspace)
   return true
 }
+
+/** Update a buildNumber in the database */
+export function updateBuildNumber(
+  dbString: string,
+  workspaceId: string,
+  buildShipmentId: string,
+  buildNumber: string
+): Workspace {
+  const workspace = findOne(dbString, 'workspaces', workspaceId)
+  const buildShipment = workspace.buildShipments.find((bs) => bs.id === buildShipmentId)
+
+  if (buildShipment) {
+    buildShipment.buildNumber = buildNumber
+  } else {
+    throw new Error(`Could not find buildShipment with id "${buildShipmentId}"`)
+  }
+
+  update(dbString, 'workspaces', workspace.id, workspace)
+  return findOne(dbString, 'workspaces', workspace.id)
+}
+
+/** Delete a build shipment in the database */
+export function deleteBuildShipment(
+  dbString: string,
+  workspaceId: string,
+  buildShipmentId: string
+): boolean {
+  const workspace = findOne(dbString, 'workspaces', workspaceId)
+  const buildShipmentIndex = workspace.buildShipments.findIndex((bs) => bs.id === buildShipmentId)
+
+  if (buildShipmentIndex !== -1) {
+    // Delete the existing build shipment
+    workspace.buildShipments.splice(buildShipmentIndex, 1)
+    update(dbString, 'workspaces', workspace.id, workspace)
+    return true
+  }
+
+  return false
+}

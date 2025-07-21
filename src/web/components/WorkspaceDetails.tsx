@@ -15,7 +15,7 @@ import PromptForm from './common/PromptForm'
 import BuildShipmentForm from './workspace/BuildShipmentForm'
 
 /** Detail view of individual workspace */
-export default function WorkspaceDetails({ workspace }: { workspace?: WorkSpaceType }) {
+export default function WorkspaceDetails({ workspace_id }: { workspace_id?: WorkSpaceType }) {
   const { workspaceId } = useParams() as { workspaceId: string }
   const [activeWorkspaceTable, setActiveWorkspaceTable] = useState<WorkSpaceType | null>(null)
   const navigate = useNavigate()
@@ -210,24 +210,17 @@ export default function WorkspaceDetails({ workspace }: { workspace?: WorkSpaceT
     ]
   // Fetch all workspaces from the API
   useEffect(() => {
-    if (!workspaceId) {
+    if (!workspaceId && !workspace_id) {
       return
     }
     async function fetchWorkspace() {
-      const workspace = await DosspaceApi.getWorkspace(workspaceId)
+      const workspace = await DosspaceApi.getWorkspace(workspaceId || (workspace_id as any))
+
       setActiveWorkspaceTable(workspace)
     }
 
     fetchWorkspace()
-  }, [workspaceId])
-
-  // Update active workspace table when workspace prop changes
-  useEffect(() => {
-    if (!workspace) {
-      return
-    }
-    setActiveWorkspaceTable(workspace)
-  }, [workspace])
+  }, [workspaceId, workspace_id])
 
   return (
     <div>

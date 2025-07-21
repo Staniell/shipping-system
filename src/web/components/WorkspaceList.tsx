@@ -155,7 +155,9 @@ export default function WorkspaceList() {
         </div>
 
         <div className="h-fit lg:w-[70%]">
-          {activeWorkspaceTable && <WorkspaceDetails workspace={activeWorkspaceTable} />}
+          {activeWorkspaceTable && (
+            <WorkspaceDetails workspace_id={activeWorkspaceTable?.id! as any} />
+          )}
         </div>
       </div>
     </div>

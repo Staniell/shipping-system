@@ -3,8 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import DosspaceApi from '../api'
 import Table, { ColumnDef } from './common/Table'
 import Box from './common/Box'
-import { DeleteIcon, DollarSign, Edit, Eye, Package, Plus, Truck } from 'lucide-react'
+import { DeleteIcon, DollarSign, Edit, Eye, Package, Plus, Truck, Download } from 'lucide-react'
+import { PDFDownloadLink } from '@react-pdf/renderer'
 import Button from './common/Button'
+import WorkspacePDF from './workspace/WorkspacePDF'
 import ShipmentForm from './workspace/ShipmentForm'
 import { componentModal } from '../helpers/modal'
 import { BuildShipment, NewShipment, Shipment, WorkSpaceType } from '../types/workspace'
@@ -175,7 +177,7 @@ export default function WorkspaceDetails({ workspace }: { workspace?: WorkSpaceT
             </div>
             <p className=" text-gray-600">Workspace ID: {activeWorkspaceTable?.id}</p>
           </div>
-          <div>
+          <div className="flex flex-col gap-y-2">
             <Button
               onClick={() => {
                 componentModal({
@@ -213,10 +215,23 @@ export default function WorkspaceDetails({ workspace }: { workspace?: WorkSpaceT
               <Plus />
               <p> Add Shipment</p>
             </Button>
+            {activeWorkspaceTable && (
+              <PDFDownloadLink
+                document={<WorkspacePDF workspace={activeWorkspaceTable} />}
+                fileName={`${activeWorkspaceTable.title || 'workspace'}.pdf`}
+              >
+                {({ loading }: { loading: boolean }) => (
+                  <Button disabled={loading}>
+                    <Download />
+                    <p>{loading ? 'Loading...' : 'Download PDF'}</p>
+                  </Button>
+                )}
+              </PDFDownloadLink>
+            )}
           </div>
         </div>
         {/* Summary */}
-        <div className="flex w-full items-center gap-3">
+        <div className="mt-4 flex w-full flex-col items-center gap-3 lg:flex-row">
           {/* Shipments */}
           <Box
             title="Build Shipments"

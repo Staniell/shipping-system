@@ -15,7 +15,8 @@ interface TableProps<T> {
 
 export default function Table<T extends object>({ columns, data, getRowId }: TableProps<T>) {
   return (
-    <table className="mt-4 w-full text-center">
+    <div className="relative overflow-x-auto">
+      <table className="mt-4 w-full text-center">
       <thead className="bg-gray-100 text-sm uppercase text-gray-700">
         <tr>
           {columns.map((column) => (
@@ -46,5 +47,6 @@ export default function Table<T extends object>({ columns, data, getRowId }: Tab
         ))}
       </tbody>
     </table>
+    </div>
   )
 }

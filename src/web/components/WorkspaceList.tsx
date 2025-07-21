@@ -42,8 +42,8 @@ export default function WorkspaceList() {
     <div className="flex flex-col">
       <h1 className="text-xl font-bold 2xl:text-3xl">Doss Workspace Viewer</h1>
       <p className="mb-4 text-gray-600">Manage and visualize your supply chain workspaces</p>
-      <div className="flex gap-x-4">
-        <div className="h-fit w-[30%] rounded-md border-2 border-gray-200 p-4">
+      <div className="flex flex-col gap-4 lg:flex-row">
+        <div className="h-fit rounded-md border-2 border-gray-200 p-4 lg:w-[30%]">
           <div className="flex items-center gap-x-2">
             <Package />
             <h2 className="text-lg font-bold 2xl:text-2xl">Workspaces</h2>
@@ -154,7 +154,7 @@ export default function WorkspaceList() {
           </div>
         </div>
 
-        <div className="h-fit w-[70%]">
+        <div className="h-fit lg:w-[70%]">
           {activeWorkspaceTable && <WorkspaceDetails workspace={activeWorkspaceTable} />}
         </div>
       </div>

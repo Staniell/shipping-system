@@ -27,7 +27,7 @@ export default function WorkSpaceForm({
           })
         }}
       >
-        <h4 className="mb-4 text-lg font-bold">Add New Workspace</h4>
+        <h4 className="mb-4 mt-2 text-lg font-bold">Add New Workspace</h4>
 
         <TextInput
           label="Workspace Title"

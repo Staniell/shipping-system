@@ -8,6 +8,13 @@ export interface Shipment {
   cost: number
 }
 
+export interface NewShipment {
+  buildNumber: string
+  description: string
+  orderNumber: string
+  cost: number
+}
+
 /** A simple shipment table containing any number of shipments for a specified build */
 export interface ShipmentTable {
   id: string

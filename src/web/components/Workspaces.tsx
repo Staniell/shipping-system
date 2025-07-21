@@ -10,10 +10,13 @@ function Workspaces() {
 
   return (
     <>
-      <div className="Workspaces__header" onClick={() => navigate('/')}>
+      <div
+        className="p-4 bg-[#000025] text-white font-bold cursor-pointer"
+        onClick={() => navigate('/')}
+      >
         Dosspace
       </div>
-      <div className="Workspaces__content">
+      <div className="p-4 container mx-auto">
         <Routes>
           <Route path="/readme" element={<ReadMe />} />
           <Route path="*" element={<WorkspaceList />} />

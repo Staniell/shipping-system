@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import DosspaceApi from '../api'
 
 interface Shipment {
@@ -29,6 +29,7 @@ type WorkspaceDetailsParams = {
 export default function WorkspaceDetails() {
   const { workspaceId } = useParams() as WorkspaceDetailsParams
   const [workspace, setWorkspace] = useState<DetailWorkspace | null>(null)
+  const navigate = useNavigate()
 
   // Fetch all workspaces from the API
   useEffect(() => {
@@ -40,5 +41,27 @@ export default function WorkspaceDetails() {
     fetchWorkspace()
   }, [workspaceId])
 
-  return <></>
+  return (
+    <div>
+      <h1>{workspace?.title}</h1>
+      <button onClick={() => navigate(`/${workspaceId}/tables`)}>View Tables</button>
+      <div>
+        <h2>Shipment Details</h2>
+        {workspace?.buildShipments.map((table) => (
+          <div key={table.id}>
+            <h3>Build Number: {table.buildNumber}</h3>
+            <ul>
+              {table.shipments.map((shipment) => (
+                <li key={shipment.id}>
+                  <p>Description: {shipment.description}</p>
+                  <p>Order Number: {shipment.orderNumber}</p>
+                  <p>Cost: ${shipment.cost}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }

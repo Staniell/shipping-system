@@ -1,7 +1,15 @@
 import express from 'express'
 import cors from 'cors'
-import { createWorkspace, getWorkspace, getWorkspaces, updateWorkspace } from './util'
+import {
+  addShipment,
+  createWorkspace,
+  getWorkspace,
+  getWorkspaces,
+  updateShipment,
+  updateWorkspace,
+} from './util'
 import { reset } from './db/db'
+import { Workspace } from './types'
 
 const app = express()
 app.use(cors())
@@ -27,19 +35,34 @@ app.post('/:workspaceId', (req, res) => {
   res.json({ workspace: updateWorkspace(dbString, workspace) })
 })
 
+/** Adds a shipment to the workspace with the given ID and returns the updated workspace */
+app.post('/:workspaceId/shipments', (req, res) => {
+  const { workspaceId } = req.params
+  const shipment = req.body
+  res.json({ workspace: addShipment(dbString, workspaceId, shipment) })
+})
+
 /** Returns all workspaces in the database */
 app.get('/', (req, res) => {
   const allWorkspaces = getWorkspaces(dbString)
-  const workspaces = allWorkspaces.map((workspace) => ({
+  const workspaces = allWorkspaces.map((workspace: Workspace) => ({
     id: workspace.id,
     title: workspace.title,
+    buildShipments: workspace.buildShipments,
   }))
   res.json({ workspaces })
 })
 
 /** Creates a new workspace in the database and returns it */
 app.post('/', (req, res) => {
-  res.json({ workspace: createWorkspace(dbString) })
+  res.json({ workspace: createWorkspace(dbString, req?.body?.title) })
+})
+
+/** Updates a shipment in the database and returns the updated workspace */
+app.put('/:workspaceId/shipments/:shipmentId', (req, res) => {
+  const { workspaceId, shipmentId } = req.params
+  const shipment = req.body
+  res.json({ workspace: updateShipment(dbString, workspaceId, shipment) })
 })
 
 module.exports = app

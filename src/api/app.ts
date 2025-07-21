@@ -31,7 +31,7 @@ app.get('/:workspaceId', (req, res) => {
 
 /** Updates the workspace with the given ID and returns the updated workspace */
 app.post('/:workspaceId', (req, res) => {
-  const workspace = req.body.workspace
+  const workspace = req.body
   res.json({ workspace: updateWorkspace(dbString, workspace) })
 })
 

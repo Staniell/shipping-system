@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import '../style/WorkspaceList.css'
 import DosspaceApi from '../api'
-import { DollarSign, Package, Plus, Truck } from 'lucide-react'
+import { DollarSign, Edit2Icon, EditIcon, Package, Plus, Truck } from 'lucide-react'
 import { BuildShipment, NewShipment, Shipment } from '../types/workspace'
 import { Edit } from 'lucide-react'
 import { kFormatter } from '../helpers/number'
@@ -152,14 +152,43 @@ export default function WorkspaceList() {
                     setActiveWorkspaceTable(workspace)
                     // navigate(`/${workspace.id}`)
                   }}
-                  className={`rounded-lg px-4 py-2.5 text-left font-bold ${
+                  className={`flex items-center justify-between rounded-lg px-4 py-2.5 text-left font-bold ${
                     activeWorkspace ? 'bg-gray-900 text-white' : 'text-black hover:bg-gray-200'
                   }`}
                 >
-                  <h2 className="font-bold">{workspace.title}</h2>
-                  <p className={`text-sm ${activeWorkspace ? 'text-gray-200' : 'text-gray-600'}`}>
-                    {workspace?.buildShipments?.length} shipments
-                  </p>
+                  <div>
+                    <h2 className="font-bold">{workspace.title}</h2>
+                    <p className={`text-sm ${activeWorkspace ? 'text-gray-200' : 'text-gray-600'}`}>
+                      {workspace?.buildShipments?.length} shipments
+                    </p>
+                  </div>
+
+                  <EditIcon
+                    onClick={(e: any) => {
+                      e.preventDefault()
+                      componentModal({
+                        component: (
+                          <WorkSpaceForm
+                            data={workspace}
+                            onSubmit={async (title) => {
+                              componentModal(null)
+                              const res = await DosspaceApi.updateWorkspace(workspace.id, {
+                                id: workspace.id,
+                                title,
+                                buildShipments: workspace.buildShipments,
+                              })
+                              if (!res) return
+                              setWorkspaces((prevWorkspaces: any) =>
+                                prevWorkspaces.map((ws: any) => (ws.id === res.id ? res : ws))
+                              )
+                              setActiveWorkspaceTable(res)
+                            }}
+                          />
+                        ),
+                      })
+                    }}
+                    size={18}
+                  />
                 </button>
               )
             })}

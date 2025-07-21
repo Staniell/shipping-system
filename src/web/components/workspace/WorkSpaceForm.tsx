@@ -2,9 +2,15 @@ import React from 'react'
 import TextInput from '../common/TextInput'
 import Button from '../common/Button'
 
-export default function WorkSpaceForm({ onSubmit }: { onSubmit: (title: string) => void }) {
+export default function WorkSpaceForm({
+  onSubmit,
+  data,
+}: {
+  onSubmit: (title: string) => void
+  data?: any
+}) {
   const [formValues, setFormValues] = React.useState({
-    title: '',
+    title: data?.title ?? '',
   })
 
   return (
@@ -23,7 +29,13 @@ export default function WorkSpaceForm({ onSubmit }: { onSubmit: (title: string) 
       >
         <h4 className="mb-4 text-lg font-bold">Add New Workspace</h4>
 
-        <TextInput label="Workspace Title" name="title" type="text" placeholder="Workspace Title" />
+        <TextInput
+          label="Workspace Title"
+          name="title"
+          type="text"
+          placeholder="Workspace Title"
+          defaultValue={formValues.title}
+        />
         <div className="mx-auto mt-4 block w-fit">
           <Button type="submit">Add Workspace</Button>
         </div>

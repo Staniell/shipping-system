@@ -16,6 +16,17 @@ class DosspaceApi {
     }
   }
 
+  /** Updates existing workspace  */
+  static async updateWorkspace(id: string, data: WorkSpaceType): Promise<WorkSpaceType | null> {
+    try {
+      const req = await axios.post(`${BASE_URL}/${id}`, { ...data })
+      return req.data.workspace
+    } catch (e) {
+      console.error(e)
+      return null
+    }
+  }
+
   /** Returns the ID and other info of every existing workspace */
   static async getWorkspaces(): Promise<WorkSpaceType[]> {
     try {

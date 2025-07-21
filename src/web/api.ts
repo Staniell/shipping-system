@@ -27,6 +27,17 @@ class DosspaceApi {
     }
   }
 
+  /** Delete existing workspace  */
+  static async deleteWorkspace(id: string): Promise<boolean> {
+    try {
+      await axios.delete(`${BASE_URL}/${id}`)
+      return true
+    } catch (e) {
+      console.error(e)
+      return false
+    }
+  }
+
   /** Returns the ID and other info of every existing workspace */
   static async getWorkspaces(): Promise<WorkSpaceType[]> {
     try {
@@ -75,6 +86,17 @@ class DosspaceApi {
     } catch (e) {
       console.error(e)
       return null
+    }
+  }
+
+  /** Deletes a shipment in the given workspace */
+  static async deleteShipment(workspaceId: string, shipmentId: string): Promise<boolean> {
+    try {
+      await axios.delete(`${BASE_URL}/${workspaceId}/shipments/${shipmentId}`)
+      return true
+    } catch (e) {
+      console.error(e)
+      return false
     }
   }
 }

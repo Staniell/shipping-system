@@ -3,6 +3,8 @@ import cors from 'cors'
 import {
   addShipment,
   createWorkspace,
+  deleteShipment,
+  deleteWorkspace,
   getWorkspace,
   getWorkspaces,
   updateShipment,
@@ -35,11 +37,23 @@ app.post('/:workspaceId', (req, res) => {
   res.json({ workspace: updateWorkspace(dbString, workspace) })
 })
 
+/** Delete existing workspace  */
+app.delete('/:workspaceId', (req, res) => {
+  const { workspaceId } = req.params
+  res.json({ success: deleteWorkspace(dbString, workspaceId) })
+})
+
 /** Adds a shipment to the workspace with the given ID and returns the updated workspace */
 app.post('/:workspaceId/shipments', (req, res) => {
   const { workspaceId } = req.params
   const shipment = req.body
   res.json({ workspace: addShipment(dbString, workspaceId, shipment) })
+})
+
+/** Deletes a shipment in the given workspace */
+app.delete('/:workspaceId/shipments/:shipmentId', (req, res) => {
+  const { workspaceId, shipmentId } = req.params
+  res.json({ success: deleteShipment(dbString, workspaceId, shipmentId) })
 })
 
 /** Returns all workspaces in the database */

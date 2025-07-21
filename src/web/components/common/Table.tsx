@@ -38,9 +38,7 @@ export default function Table<T extends object>({ columns, data, getRowId }: Tab
                   key={column.id ?? (column.accessorKey as string)}
                   className="px-6 py-4 text-sm font-semibold"
                 >
-                  {column.cell
-                    ? column.cell({ row, value })
-                    : (value as React.ReactNode)}
+                  {column.cell ? column.cell({ row, value }) : (value as React.ReactNode)}
                 </td>
               )
             })}

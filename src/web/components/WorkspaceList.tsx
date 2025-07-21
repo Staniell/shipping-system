@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import '../style/WorkspaceList.css'
 import DosspaceApi from '../api'
-import { DollarSign, Edit2Icon, EditIcon, Package, Plus, Truck } from 'lucide-react'
+import { DeleteIcon, DollarSign, EditIcon, Package, Plus, Truck } from 'lucide-react'
 import { BuildShipment, NewShipment, Shipment } from '../types/workspace'
 import { Edit } from 'lucide-react'
 import { kFormatter } from '../helpers/number'
@@ -11,12 +11,35 @@ import { componentModal } from '../helpers/modal'
 import Button from './common/Button'
 import ShipmentForm from './workspace/ShipmentForm'
 import WorkSpaceForm from './workspace/WorkSpaceForm'
+import PromptForm from './common/PromptForm'
 
 export interface HomepageWorkspace {
   id: string
   title: string
   buildShipments: BuildShipment[]
 }
+
+const buildShipmentColumns: ColumnDef<BuildShipment>[] = [
+  { title: 'Build Number', accessorKey: 'buildNumber' },
+  {
+    title: 'Number of Shipments',
+    id: 'numberOfShipments',
+    accessorKey: 'shipments',
+    cell: ({ value }) => (value as Shipment[]).length,
+  },
+  {
+    title: 'Total Cost',
+    id: 'totalCost',
+    accessorKey: 'shipments',
+    cell: ({ value }) => {
+      const totalCost = (value as Shipment[]).reduce(
+        (total: number, shipment: Shipment) => total + shipment.cost,
+        0
+      )
+      return `$${kFormatter(totalCost)}`
+    },
+  },
+]
 
 /** Homepage list of all workspaces that have been created */
 export default function WorkspaceList() {
@@ -26,78 +49,110 @@ export default function WorkspaceList() {
   const tableOptions = ['Shipments', 'Build Shipments']
   const [activeTable, setActiveTable] = useState<string>(tableOptions[0])
 
-  const flatShipments =
-    activeWorkspaceTable?.buildShipments?.flatMap((buildShipment) =>
-      buildShipment.shipments.map((shipment) => ({
-        ...shipment,
-        buildNumber: buildShipment.buildNumber,
-      }))
+  const shipments =
+    activeWorkspaceTable?.buildShipments.flatMap((bs) =>
+      bs.shipments.map((s) => ({ ...s, buildShipmentId: bs.id, buildNumber: bs.buildNumber }))
     ) ?? []
 
-  const shipmentColumns: ColumnDef<Shipment & { buildNumber: string }>[] = [
-    { title: 'Build Number', accessorKey: 'buildNumber' },
-    { title: 'Description', accessorKey: 'description' },
-    { title: 'Order Number', accessorKey: 'orderNumber' },
-    {
-      title: 'Cost',
-      accessorKey: 'cost',
-      cell: ({ value }) => `$${kFormatter(value as number)}`,
-    },
-    {
-      title: '',
-      id: 'edit',
-      cell: ({ row }) => (
-        <button
-          onClick={() => {
-            componentModal({
-              component: (
-                <ShipmentForm
-                  shipment={row}
-                  onSubmit={async (val) => {
-                    if (!activeWorkspaceTable?.id) return
-                    const res = await DosspaceApi.updateShipment(activeWorkspaceTable.id, row.id, {
-                      id: row.id,
-                      description: val.description,
-                      orderNumber: val.orderNumber,
-                      cost: val.cost,
-                    })
-
-                    if (res) {
-                      setWorkspaces((prev) => prev.map((ws) => (ws.id === res.id ? res : ws)))
-                      setActiveWorkspaceTable(res)
-                    }
-                    componentModal(null)
-                  }}
-                />
-              ),
-            })
-          }}
-        >
-          <Edit className="h-4 w-4" />
-        </button>
-      ),
-    },
-  ]
-
-  const buildShipmentColumns: ColumnDef<BuildShipment>[] = [
-    { title: 'Build Number', accessorKey: 'buildNumber' },
-    {
-      title: 'Number of Shipments',
-      accessorKey: 'shipments',
-      cell: ({ value }) => (value as Shipment[]).length,
-    },
-    {
-      title: 'Total Cost',
-      accessorKey: 'shipments',
-      cell: ({ value }) => {
-        const totalCost = (value as Shipment[]).reduce(
-          (total: number, shipment: Shipment) => total + shipment.cost,
-          0
-        )
-        return `$${kFormatter(totalCost)}`
+  const shipmentColumns: ColumnDef<Shipment & { buildShipmentId: string; buildNumber: string }>[] =
+    [
+      { title: 'Build Number', accessorKey: 'buildNumber' },
+      { title: 'Description', accessorKey: 'description' },
+      { title: 'Order Number', accessorKey: 'orderNumber' },
+      {
+        title: 'Cost',
+        accessorKey: 'cost',
+        cell: ({ value }) => `$${kFormatter(value as number)}`,
       },
-    },
-  ]
+      {
+        title: '',
+        id: 'edit',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-x-3">
+            <button
+              onClick={() => {
+                componentModal({
+                  component: (
+                    <PromptForm
+                      label="Are you sure you want to delete this shipment?"
+                      onNo={() => componentModal(null)}
+                      onYes={async () => {
+                        componentModal(null)
+                        const success = await DosspaceApi.deleteShipment(
+                          activeWorkspaceTable?.id!,
+                          row.id
+                        )
+
+                        if (success) {
+                          const newWorkspaces = workspaces.map((ws) => {
+                            if (ws.id === activeWorkspaceTable?.id) {
+                              const updatedBuildShipments = ws.buildShipments.map(
+                                (bs: BuildShipment) => {
+                                  if (bs.id === row.buildShipmentId) {
+                                    return {
+                                      ...bs,
+                                      shipments: bs.shipments.filter(
+                                        (s: Shipment) => s.id !== row.id
+                                      ),
+                                    }
+                                  }
+                                  return bs
+                                }
+                              )
+                              return { ...ws, buildShipments: updatedBuildShipments }
+                            }
+                            return ws
+                          })
+                          setWorkspaces(newWorkspaces)
+                          setActiveWorkspaceTable(
+                            newWorkspaces.find((ws) => ws.id === activeWorkspaceTable?.id) ?? null
+                          )
+                        }
+                      }}
+                    />
+                  ),
+                })
+              }}
+              className="cursor-pointer text-red-500"
+            >
+              <DeleteIcon className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => {
+                componentModal({
+                  component: (
+                    <ShipmentForm
+                      shipment={row as Shipment & { buildNumber: string }}
+                      onSubmit={async (val) => {
+                        if (!activeWorkspaceTable?.id) return
+                        const res = await DosspaceApi.updateShipment(
+                          activeWorkspaceTable.id,
+                          row.id,
+                          {
+                            id: row.id,
+                            description: val.description,
+                            orderNumber: val.orderNumber,
+                            cost: val.cost,
+                          }
+                        )
+
+                        if (res) {
+                          setWorkspaces((prev) => prev.map((ws) => (ws.id === res.id ? res : ws)))
+                          setActiveWorkspaceTable(res)
+                        }
+                        componentModal(null)
+                      }}
+                    />
+                  ),
+                })
+              }}
+            >
+              <Edit className="h-4 w-4" />
+            </button>
+          </div>
+        ),
+      },
+    ]
 
   // Fetch all workspaces from the API
   useEffect(() => {
@@ -146,50 +201,81 @@ export default function WorkspaceList() {
             {workspaces.map((workspace) => {
               const activeWorkspace = activeWorkspaceTable?.id === workspace.id
               return (
-                <button
-                  key={workspace.id}
-                  onClick={() => {
-                    setActiveWorkspaceTable(workspace)
-                    // navigate(`/${workspace.id}`)
-                  }}
-                  className={`flex items-center justify-between rounded-lg px-4 py-2.5 text-left font-bold ${
-                    activeWorkspace ? 'bg-gray-900 text-white' : 'text-black hover:bg-gray-200'
-                  }`}
-                >
-                  <div>
-                    <h2 className="font-bold">{workspace.title}</h2>
-                    <p className={`text-sm ${activeWorkspace ? 'text-gray-200' : 'text-gray-600'}`}>
-                      {workspace?.buildShipments?.length} shipments
-                    </p>
-                  </div>
-
-                  <EditIcon
-                    onClick={(e: any) => {
-                      e.preventDefault()
-                      componentModal({
-                        component: (
-                          <WorkSpaceForm
-                            data={workspace}
-                            onSubmit={async (title) => {
-                              componentModal(null)
-                              const res = await DosspaceApi.updateWorkspace(workspace.id, {
-                                id: workspace.id,
-                                title,
-                                buildShipments: workspace.buildShipments,
-                              })
-                              if (!res) return
-                              setWorkspaces((prevWorkspaces: any) =>
-                                prevWorkspaces.map((ws: any) => (ws.id === res.id ? res : ws))
-                              )
-                              setActiveWorkspaceTable(res)
-                            }}
-                          />
-                        ),
-                      })
+                <div className="flex items-center gap-x-3">
+                  <button
+                    key={workspace.id}
+                    onClick={() => {
+                      setActiveWorkspaceTable(workspace)
                     }}
-                    size={18}
-                  />
-                </button>
+                    className={`flex w-full items-center justify-between rounded-lg px-4 py-2.5 text-left font-bold ${
+                      activeWorkspace ? 'bg-gray-900 text-white' : 'text-black hover:bg-gray-200'
+                    }`}
+                  >
+                    <div>
+                      <h2 className="font-bold">{workspace.title}</h2>
+                      <p
+                        className={`text-sm ${activeWorkspace ? 'text-gray-200' : 'text-gray-600'}`}
+                      >
+                        {workspace?.buildShipments?.length} shipments
+                      </p>
+                    </div>
+                  </button>
+
+                  <div className="flex items-center gap-x-2">
+                    <EditIcon
+                      className="cursor-pointer"
+                      onClick={(e: any) => {
+                        e.preventDefault()
+                        componentModal({
+                          component: (
+                            <WorkSpaceForm
+                              data={workspace}
+                              onSubmit={async (title) => {
+                                componentModal(null)
+                                const res = await DosspaceApi.updateWorkspace(workspace.id, {
+                                  id: workspace.id,
+                                  title,
+                                  buildShipments: workspace.buildShipments,
+                                })
+                                if (!res) return
+                                setWorkspaces((prevWorkspaces: any) =>
+                                  prevWorkspaces.map((ws: any) => (ws.id === res.id ? res : ws))
+                                )
+                                setActiveWorkspaceTable(res)
+                              }}
+                            />
+                          ),
+                        })
+                      }}
+                      size={18}
+                    />
+                    <DeleteIcon
+                      className="cursor-pointer text-red-500"
+                      onClick={(e: any) => {
+                        e.preventDefault()
+                        componentModal({
+                          component: (
+                            <PromptForm
+                              onNo={() => componentModal(null)}
+                              onYes={async () => {
+                                componentModal(null)
+                                const res: any = await DosspaceApi.deleteWorkspace(workspace.id)
+
+                                if (!res) return
+                                setWorkspaces((prevWorkspaces: any) =>
+                                  prevWorkspaces.filter((ws: any) => ws.id !== workspace.id)
+                                )
+                                if (workspaces.length > 0) setActiveWorkspaceTable(workspaces[0])
+                                else setActiveWorkspaceTable(null)
+                              }}
+                            />
+                          ),
+                        })
+                      }}
+                      size={18}
+                    />
+                  </div>
+                </div>
               )
             })}
           </div>
@@ -230,7 +316,7 @@ export default function WorkspaceList() {
 
                             if (updatedWorkspace) {
                               setWorkspaces((prevWorkspaces) =>
-                                prevWorkspaces.map((ws) =>
+                                prevWorkspaces.map((ws: HomepageWorkspace) =>
                                   ws.id === updatedWorkspace.id ? updatedWorkspace : ws
                                 )
                               )
@@ -303,28 +389,30 @@ export default function WorkspaceList() {
             ))}
           </div>
 
-          {activeTable === 'Shipments' ? (
-            <div className="mt-4 rounded-md border-2 border-gray-200 p-4">
-              <h2 className="text-lg font-bold 2xl:text-2xl">Shipments Overview</h2>
-              <p className="text-gray-600">
-                All shipments across build numbers in {activeWorkspaceTable?.title}
-              </p>
+          <div key={activeWorkspaceTable?.id}>
+            {activeTable === 'Shipments' ? (
+              <div className="mt-4 rounded-md border-2 border-gray-200 p-4">
+                <h2 className="text-lg font-bold 2xl:text-2xl">Shipments Overview</h2>
+                <p className="text-gray-600">
+                  All shipments across build numbers in {activeWorkspaceTable?.title}
+                </p>
 
-              <Table columns={shipmentColumns} data={flatShipments} getRowId={(row) => row.id} />
-            </div>
-          ) : (
-            <div className="mt-4 rounded-md border-2 border-gray-200 p-4">
-              <h2 className="text-lg font-bold 2xl:text-2xl">Build Shipments Overview</h2>
-              <p className="text-gray-600">
-                Build shipment summary for {activeWorkspaceTable?.title}
-              </p>
-              <Table
-                columns={buildShipmentColumns}
-                data={activeWorkspaceTable?.buildShipments ?? []}
-                getRowId={(row) => row.id}
-              />
-            </div>
-          )}
+                <Table columns={shipmentColumns} data={shipments} getRowId={(row) => row.id} />
+              </div>
+            ) : (
+              <div className="mt-4 rounded-md border-2 border-gray-200 p-4">
+                <h2 className="text-lg font-bold 2xl:text-2xl">Build Shipments Overview</h2>
+                <p className="text-gray-600">
+                  Build shipment summary for {activeWorkspaceTable?.title}
+                </p>
+                <Table
+                  columns={buildShipmentColumns}
+                  data={activeWorkspaceTable?.buildShipments ?? []}
+                  getRowId={(row) => row.id}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

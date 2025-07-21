@@ -1,4 +1,4 @@
-import { all, findOne, insert, update } from './db/db'
+import { all, deleteObj, findOne, insert, update } from './db/db'
 import { NewShipment, Shipment, Workspace } from './types'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -34,6 +34,12 @@ export function createWorkspace(dbString: string, title: string): Workspace {
 export function updateWorkspace(dbString: string, workspace: Workspace): Workspace {
   update(dbString, 'workspaces', workspace.id, workspace)
   return findOne(dbString, 'workspaces', workspace.id)
+}
+
+/** Delete existing workspace  */
+export function deleteWorkspace(dbString: string, id: string): boolean {
+  deleteObj(dbString, 'workspaces', id)
+  return true
 }
 
 /** Add a shipment to a workspace in the database */
@@ -92,4 +98,21 @@ export function updateShipment(
 
   update(dbString, 'workspaces', workspace.id, workspace)
   return findOne(dbString, 'workspaces', workspace.id)
+}
+
+/** Delete a shipment in the database */
+export function deleteShipment(dbString: string, workspaceId: string, shipmentId: string): boolean {
+  const workspace = findOne(dbString, 'workspaces', workspaceId)
+  for (const buildShipment of workspace.buildShipments) {
+    const shipmentIndex = buildShipment.shipments.findIndex((s) => s.id === shipmentId)
+
+    if (shipmentIndex !== -1) {
+      // Delete the existing shipment
+      buildShipment.shipments.splice(shipmentIndex, 1)
+      break
+    }
+  }
+
+  update(dbString, 'workspaces', workspace.id, workspace)
+  return true
 }

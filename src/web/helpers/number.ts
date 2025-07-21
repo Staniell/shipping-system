@@ -1,5 +1,5 @@
 export function kFormatter(num: number | string) {
-  const numericValue = typeof num === 'string' ? parseFloat(num) : num
+  const numericValue = typeof num === 'string' ? parseInt(num) : num
 
   if (isNaN(numericValue)) {
     return '0'

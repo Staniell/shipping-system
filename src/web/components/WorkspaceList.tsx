@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import DosspaceApi from '../api'
 import { DeleteIcon, EditIcon, Package } from 'lucide-react'
 import { BuildShipment } from '../types/workspace'
 import { componentModal } from '../helpers/modal'
@@ -7,6 +6,7 @@ import Button from './common/Button'
 import WorkSpaceForm from './workspace/WorkSpaceForm'
 import PromptForm from './common/PromptForm'
 import WorkspaceDetails from './WorkspaceDetails'
+import WorkspaceQuery from '../queries/workspace.query'
 
 export interface HomepageWorkspace {
   id: string
@@ -19,18 +19,10 @@ export default function WorkspaceList() {
   const [workspaces, setWorkspaces] = useState<HomepageWorkspace[]>([])
   const [activeWorkspaceTable, setActiveWorkspaceTable] = useState<HomepageWorkspace | null>(null)
 
-  const handleShipmentDeleted = (updatedWorkspace: HomepageWorkspace) => {
-    const newWorkspaces = workspaces.map((ws) =>
-      ws.id === updatedWorkspace.id ? updatedWorkspace : ws
-    )
-    setWorkspaces(newWorkspaces)
-    setActiveWorkspaceTable(updatedWorkspace)
-  }
-
   // Fetch all workspaces from the API
   useEffect(() => {
     async function fetchWorkspaces() {
-      const workspaces = await DosspaceApi.getWorkspaces()
+      const workspaces = await WorkspaceQuery.getWorkspaces()
       setWorkspaces(workspaces)
       setActiveWorkspaceTable(workspaces[0])
     }
@@ -60,7 +52,7 @@ export default function WorkspaceList() {
                       <WorkSpaceForm
                         onSubmit={async (title) => {
                           componentModal(null)
-                          const res = await DosspaceApi.createWorkspace(title)
+                          const res = await WorkspaceQuery.createWorkspace(title)
                           setWorkspaces((prevWorkspaces: any) => [...prevWorkspaces, res])
                         }}
                       />
@@ -105,7 +97,7 @@ export default function WorkspaceList() {
                               data={workspace}
                               onSubmit={async (title) => {
                                 componentModal(null)
-                                const res = await DosspaceApi.updateWorkspace(workspace.id, {
+                                const res = await WorkspaceQuery.updateWorkspace(workspace.id, {
                                   id: workspace.id,
                                   title,
                                   buildShipments: workspace.buildShipments,
@@ -132,7 +124,7 @@ export default function WorkspaceList() {
                               onNo={() => componentModal(null)}
                               onYes={async () => {
                                 componentModal(null)
-                                const res: any = await DosspaceApi.deleteWorkspace(workspace.id)
+                                const res: any = await WorkspaceQuery.deleteWorkspace(workspace.id)
 
                                 if (!res) return
                                 setWorkspaces((prevWorkspaces: any) =>
@@ -156,7 +148,15 @@ export default function WorkspaceList() {
 
         <div className="h-fit lg:w-[70%]">
           {activeWorkspaceTable && (
-            <WorkspaceDetails workspace_id={activeWorkspaceTable?.id! as any} />
+            <WorkspaceDetails
+              workspace_id={activeWorkspaceTable?.id! as any}
+              onUpdate={(updatedWorkspace: HomepageWorkspace) => {
+                setWorkspaces((prev) =>
+                  prev.map((ws) => (ws.id === updatedWorkspace.id ? updatedWorkspace : ws))
+                )
+                setActiveWorkspaceTable(updatedWorkspace)
+              }}
+            />
           )}
         </div>
       </div>

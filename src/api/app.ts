@@ -1,19 +1,9 @@
 import express from 'express'
 import cors from 'cors'
-import {
-  addShipment,
-  createWorkspace,
-  deleteShipment,
-  deleteWorkspace,
-  getWorkspace,
-  getWorkspaces,
-  updateShipment,
-  updateWorkspace,
-  updateBuildNumber,
-  deleteBuildShipment,
-} from './util'
 import { reset } from './db/db'
-import { Workspace } from './types'
+import workspaceRoutes from './workspaces/workspaces.routes'
+import shipmentRoutes from './shipments/shipments.routes'
+import buildShipmentRoutes from './buildShipments/buildShipments.routes'
 
 const app = express()
 app.use(cors())
@@ -28,73 +18,9 @@ app.get('/reset', (req, res) => {
   res.send('Reset database')
 })
 
-/** Returns the workspace with the given ID */
-app.get('/:workspaceId', (req, res) => {
-  res.json({ workspace: getWorkspace(dbString, req.params.workspaceId) })
-})
-
-/** Updates the workspace with the given ID and returns the updated workspace */
-app.post('/:workspaceId', (req, res) => {
-  const workspace = req.body
-  res.json({ workspace: updateWorkspace(dbString, workspace) })
-})
-
-/** Delete existing workspace  */
-app.delete('/:workspaceId', (req, res) => {
-  const { workspaceId } = req.params
-  res.json({ success: deleteWorkspace(dbString, workspaceId) })
-})
-
-/** Adds a shipment to the workspace with the given ID and returns the updated workspace */
-app.post('/:workspaceId/shipments', (req, res) => {
-  const { workspaceId } = req.params
-  const shipment = req.body
-  res.json({ workspace: addShipment(dbString, workspaceId, shipment) })
-})
-
-/** Deletes a shipment in the given workspace */
-app.delete('/:workspaceId/shipments/:shipmentId', (req, res) => {
-  const { workspaceId, shipmentId } = req.params
-  res.json({ success: deleteShipment(dbString, workspaceId, shipmentId) })
-})
-
-/** Returns all workspaces in the database */
-app.get('/', (req, res) => {
-  const allWorkspaces = getWorkspaces(dbString)
-  const workspaces = allWorkspaces.map((workspace: Workspace) => ({
-    id: workspace.id,
-    title: workspace.title,
-    buildShipments: workspace.buildShipments,
-  }))
-  res.json({ workspaces })
-})
-
-/** Creates a new workspace in the database and returns it */
-app.post('/', (req, res) => {
-  res.json({ workspace: createWorkspace(dbString, req?.body?.title) })
-})
-
-/** Updates a shipment in the database and returns the updated workspace */
-app.put('/:workspaceId/shipments/:shipmentId', (req, res) => {
-  const { workspaceId, shipmentId } = req.params
-  const shipment = req.body
-  res.json({ workspace: updateShipment(dbString, workspaceId, shipment) })
-})
-
-/** Updates a buildNumber in the database and returns the updated workspace */
-app.put('/:workspaceId/build-shipments/:buildShipmentId', (req, res) => {
-  const { workspaceId, buildShipmentId } = req.params
-  const { buildNumber } = req.body
-  res.json({
-    workspace: updateBuildNumber(dbString, workspaceId, buildShipmentId, buildNumber),
-  })
-})
-
-/** Deletes a build shipment in the given workspace */
-app.delete('/:workspaceId/build-shipments/:buildShipmentId', (req, res) => {
-  const { workspaceId, buildShipmentId } = req.params
-  res.json({ success: deleteBuildShipment(dbString, workspaceId, buildShipmentId) })
-})
+app.use('/', workspaceRoutes)
+app.use('/:workspaceId/shipments', shipmentRoutes)
+app.use('/:workspaceId/build-shipments', buildShipmentRoutes)
 
 module.exports = app
 

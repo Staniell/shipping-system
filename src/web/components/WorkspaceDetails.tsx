@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import DosspaceApi from '../api'
 import Table, { ColumnDef } from './common/Table'
 import Box from './common/Box'
 import { DeleteIcon, DollarSign, Edit, Eye, Package, Plus, Truck, Download } from 'lucide-react'
@@ -13,9 +12,18 @@ import { BuildShipment, NewShipment, Shipment, WorkSpaceType } from '../types/wo
 import { kFormatter } from '../helpers/number'
 import PromptForm from './common/PromptForm'
 import BuildShipmentForm from './workspace/BuildShipmentForm'
+import WorkspaceQuery from '../queries/workspace.query'
+import ShipmentQuery from '../queries/shipment.query'
+import BuildShipmentQuery from '../queries/buildshipment.query'
 
 /** Detail view of individual workspace */
-export default function WorkspaceDetails({ workspace_id }: { workspace_id?: WorkSpaceType }) {
+export default function WorkspaceDetails({
+  workspace_id,
+  onUpdate,
+}: {
+  workspace_id?: WorkSpaceType
+  onUpdate?: (workspace: WorkSpaceType) => void
+}) {
   const { workspaceId } = useParams() as { workspaceId: string }
   const [activeWorkspaceTable, setActiveWorkspaceTable] = useState<WorkSpaceType | null>(null)
   const navigate = useNavigate()
@@ -61,7 +69,7 @@ export default function WorkspaceDetails({ workspace_id }: { workspace_id?: Work
                     onNo={() => componentModal(null)}
                     onYes={async () => {
                       componentModal(null)
-                      const success = await DosspaceApi.deleteBuildShipment(
+                      const success = await BuildShipmentQuery.deleteBuildShipment(
                         activeWorkspaceTable?.id!,
                         row.id
                       )
@@ -76,6 +84,7 @@ export default function WorkspaceDetails({ workspace_id }: { workspace_id?: Work
                           ),
                         }
                         setActiveWorkspaceTable(updatedWorkspace)
+                        if (onUpdate) onUpdate(updatedWorkspace)
                       }
                     }}
                   />
@@ -94,7 +103,7 @@ export default function WorkspaceDetails({ workspace_id }: { workspace_id?: Work
                     data={row}
                     onSubmit={async (buildNumber) => {
                       if (!activeWorkspaceTable?.id) return
-                      const res = await DosspaceApi.updateBuildShipment(
+                      const res = await BuildShipmentQuery.updateBuildShipment(
                         activeWorkspaceTable.id,
                         row.id,
                         buildNumber
@@ -102,6 +111,7 @@ export default function WorkspaceDetails({ workspace_id }: { workspace_id?: Work
 
                       if (res) {
                         setActiveWorkspaceTable(res)
+                        if (onUpdate) onUpdate(res)
                       }
                       componentModal(null)
                     }}
@@ -141,7 +151,7 @@ export default function WorkspaceDetails({ workspace_id }: { workspace_id?: Work
                       onNo={() => componentModal(null)}
                       onYes={async () => {
                         componentModal(null)
-                        const success = await DosspaceApi.deleteShipment(
+                        const success = await ShipmentQuery.deleteShipment(
                           activeWorkspaceTable?.id!,
                           row.id
                         )
@@ -162,7 +172,7 @@ export default function WorkspaceDetails({ workspace_id }: { workspace_id?: Work
                             }),
                           }
                           setActiveWorkspaceTable(updatedWorkspace)
-                          // onShipmentDeleted(updatedWorkspace)
+                          if (onUpdate) onUpdate(updatedWorkspace)
                         }
                       }}
                     />
@@ -181,19 +191,20 @@ export default function WorkspaceDetails({ workspace_id }: { workspace_id?: Work
                       shipment={row as Shipment & { buildNumber: string }}
                       onSubmit={async (val) => {
                         if (!activeWorkspaceTable?.id) return
-                        const res = await DosspaceApi.updateShipment(
+                        const res = await ShipmentQuery.updateShipment(
                           activeWorkspaceTable.id,
                           row.id,
                           {
                             id: row.id,
                             description: val.description,
                             orderNumber: val.orderNumber,
-                            cost: val.cost,
+                            cost: parseInt(val.cost as any) || 0,
                           }
                         )
 
                         if (res) {
                           setActiveWorkspaceTable(res)
+                          if (onUpdate) onUpdate(res)
                         }
                         componentModal(null)
                       }}
@@ -214,7 +225,7 @@ export default function WorkspaceDetails({ workspace_id }: { workspace_id?: Work
       return
     }
     async function fetchWorkspace() {
-      const workspace = await DosspaceApi.getWorkspace(workspaceId || (workspace_id as any))
+      const workspace = await WorkspaceQuery.getWorkspace(workspaceId || (workspace_id as any))
 
       setActiveWorkspaceTable(workspace)
     }
@@ -254,7 +265,7 @@ export default function WorkspaceDetails({ workspace_id }: { workspace_id?: Work
                       onSubmit={async (shipment: NewShipment) => {
                         if (!activeWorkspaceTable?.id) return
 
-                        const updatedWorkspace = await DosspaceApi.addShipment(
+                        const updatedWorkspace = await ShipmentQuery.addShipment(
                           activeWorkspaceTable.id,
                           {
                             buildNumber: shipment.buildNumber,
@@ -266,6 +277,7 @@ export default function WorkspaceDetails({ workspace_id }: { workspace_id?: Work
 
                         if (updatedWorkspace) {
                           setActiveWorkspaceTable(updatedWorkspace)
+                          if (onUpdate) onUpdate(updatedWorkspace)
                           componentModal(null) // Close modal on success
                         }
                       }}

@@ -1,5 +1,4 @@
 import WorkspaceList from './WorkspaceList'
-import '../style/Workspaces.css'
 import { Routes, Route } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import ReadMe from './ReadMe'
@@ -11,12 +10,12 @@ function Workspaces() {
   return (
     <>
       <div
-        className="p-4 bg-[#000025] text-white font-bold cursor-pointer"
+        className="cursor-pointer bg-[#000025] p-4 font-bold text-white"
         onClick={() => navigate('/')}
       >
         Dosspace
       </div>
-      <div className="p-4 container mx-auto">
+      <div className="container mx-auto p-4">
         <Routes>
           <Route path="/readme" element={<ReadMe />} />
           <Route path="*" element={<WorkspaceList />} />
